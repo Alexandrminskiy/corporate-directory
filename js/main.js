@@ -68,15 +68,24 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  searchInput.addEventListener('input', () => {
-    const query = searchInput.value.toLowerCase();
-    const filtered = allContacts.filter(c => 
-      String(c['ФИО'] || '').toLowerCase().includes(query) ||
-      String(c['Телефон'] || '').includes(query) ||
-      String(c['Населенный пункт'] || '').toLowerCase().includes(query)
+  // В функции searchInput.addEventListener:
+searchInput.addEventListener('input', () => {
+  const query = searchInput.value.toLowerCase();
+  const filtered = allContacts.filter(contact => {
+    const fio = contact['ФИО'] ? String(contact['ФИО']).toLowerCase() : '';
+    const role = contact['Должность'] ? String(contact['Должность']).toLowerCase() : '';
+    const phone = contact['Телефон'] != null ? String(contact['Телефон']) : '';
+    const location = contact['Населенный пункт'] ? String(contact['Населенный пункт']).toLowerCase() : '';
+    
+    return (
+      fio.includes(query) ||
+      role.includes(query) ||
+      phone.includes(query) ||
+      location.includes(query)
     );
-    renderContacts(filtered);
   });
+  renderContacts(filtered);
+});
 
   showAddFormBtn.addEventListener('click', () => {
     currentEditingId = null;
