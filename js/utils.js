@@ -45,43 +45,30 @@ async function fetchContacts(apiUrl) {
 
 // --- Отправка данных в Google Apps Script ---
 async function sendContact(apiUrl, action, data, recordId = null) {
-    const payload = { action, data };
-    if (recordId) payload.id = recordId;
+  const payload = { action, data };
+  if (recordId) payload.id = recordId;
 
-    try {
-        console.log(`Отправляем ${action} запрос на:`, apiUrl, "Payload:", payload); // Лог для отладки
+  try {
+    console.log(`Отправляем ${action} запрос на:`, apiUrl, "Payload:", payload);
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      mode: 'no-cors', // Важно: без этого GAS может блокировать
+      headers: {
+        'Content-Type': 'text/plain', // 🔑 Ключевое изменение: избегаем preflight
+      },
+      body: JSON.stringify(payload),
+    });
 
-        const response = await fetch(apiUrl, {
-            method: 'POST',
-            // mode: 'no-cors', // <-- ПОКА ОСТАВИМ ЗАКОММЕНТИРОВАННЫМ
-            headers: {
-                'Content-Type': 'application/json',
-                // 'Accept': 'application/json', // GAS часто возвращает text/plain
-            },
-            body: JSON.stringify(payload),
-        });
-
-        console.log("Ответ от сервера (doPost):", response.status, response.statusText); // Лог статуса
-
-        // ВАЖНО: Если используется mode: 'no-cors', следующая строка вызовет ошибку!
-        // let result;
-        // if(response.ok) {
-        //     result = await response.json(); // Это НЕ работает с no-cors
-        // } else {
-        //     throw new Error(`Network response was not ok. Status: ${response.status}`);
-        // }
-
-        // ВРЕМЕННОЕ РЕШЕНИЕ: Ждём и возвращаем фиктивный результат
-        // Это позволяет обновить список после операции.
-        // Для настоящей проверки успеха нужно либо отказаться от no-cors (что сложно с GAS),
-        // либо использовать более сложные методы, например, отправку уникального ID операции
-        // и проверку его результата через отдельный GET-запрос.
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        console.log("Предполагаем, что запрос прошёл успешно. Перезагрузка списка...");
-        return { result: "success_pending_reload" };
-
-    } catch (error) {
-        console.error('Ошибка при выполнении fetch (doPost):', error);
-        throw error;
-    }
+    console.log("Запрос отправлен (статус:", response.status, ")");
+    
+    // При mode: 'no-cors' ответ прочитать нельзя, поэтому просто ждём
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    return { result: "success_pending_reload" };
+    
+  } catch (error) {
+    console.error('Ошибка отправки:', error);
+    throw error;
+  }
 }
