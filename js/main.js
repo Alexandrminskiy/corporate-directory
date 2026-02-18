@@ -98,18 +98,24 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // --- Поиск (с защитой от типов данных) ---
-  searchInput.addEventListener('input', () => {
-    const query = searchInput.value.toLowerCase();
-    const filtered = allContacts.filter(c => 
-      safeString(c['ФИО']).includes(query) ||
-      safeString(c['Должность']).includes(query) ||
-      safeString(c['Организация']).includes(query) ||
-      safeString(c['Населенный пункт']).includes(query) ||
-      safeString(c['Телефон']).includes(query) || // Теперь безопасно работает с числами
-      safeString(c['Email']).includes(query)
+  // В функции searchInput.addEventListener:
+searchInput.addEventListener('input', () => {
+  const query = searchInput.value.toLowerCase();
+  const filtered = allContacts.filter(c => {
+    const fio = c['ФИО'] ? String(c['ФИО']).toLowerCase() : '';
+    const role = c['Должность'] ? String(c['Должность']).toLowerCase() : '';
+    const phone = c['Телефон'] != null ? String(c['Телефон']) : '';
+    const location = c['Населенный пункт'] ? String(c['Населенный пункт']).toLowerCase() : '';
+    
+    return (
+      fio.includes(query) ||
+      role.includes(query) ||
+      phone.includes(query) ||
+      location.includes(query)
     );
-    renderContacts(filtered);
   });
+  renderContacts(filtered);
+});
 
   // --- Модальное окно: Открыть для добавления ---
   showAddFormBtn.addEventListener('click', () => {

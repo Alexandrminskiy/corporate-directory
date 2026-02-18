@@ -23,7 +23,7 @@ async function sendContact(apiUrl, action, data, recordId = null) {
     await fetch(apiUrl, {
       method: 'POST',
       mode: 'no-cors', // 🔑 Обязательно для GitHub Pages + GAS
-      headers: { 'Content-Type': 'text/plain' }, // 🔑 Избегаем preflight
+      headers: { 'Content-Type': 'text/plain' }, // 🔑 Ключевое: избегаем preflight
       body: JSON.stringify(payload),
     });
 
