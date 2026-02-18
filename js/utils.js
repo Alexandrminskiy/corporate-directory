@@ -44,31 +44,32 @@ async function fetchContacts(apiUrl) {
 }
 
 // --- Отправка данных в Google Apps Script ---
+// js/utils.js
 async function sendContact(apiUrl, action, data, recordId = null) {
-  const payload = { action, data };
-  if (recordId) payload.id = recordId;
+    const payload = { action, data };
+    if (recordId) payload.id = recordId;
 
-  try {
-    console.log(`Отправляем ${action} запрос на:`, apiUrl, "Payload:", payload);
-    
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      mode: 'no-cors', // Важно: без этого GAS может блокировать
-      headers: {
-        'Content-Type': 'text/plain', // 🔑 Ключевое изменение: избегаем preflight
-      },
-      body: JSON.stringify(payload),
-    });
+    try {
+        console.log(`Отправляем ${action} запрос на:`, apiUrl, "Payload:", payload);
 
-    console.log("Запрос отправлен (статус:", response.status, ")");
-    
-    // При mode: 'no-cors' ответ прочитать нельзя, поэтому просто ждём
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    return { result: "success_pending_reload" };
-    
-  } catch (error) {
-    console.error('Ошибка отправки:', error);
-    throw error;
-  }
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            mode: 'no-cors', // 🔑 Ключевое: без preflight
+            headers: {
+                'Content-Type': 'text/plain', // 🔑 Избегаем CORS preflight
+            },
+            body: JSON.stringify(payload),
+        });
+
+        console.log("Запрос отправлен (статус:", response.status, ")");
+
+        // При no-cors ответ прочитать нельзя, поэтому ждём и считаем успешным
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        return { result: "success_pending_reload" };
+
+    } catch (error) {
+        console.error('Ошибка отправки:', error);
+        throw error;
+    }
 }
