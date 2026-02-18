@@ -1,0 +1,92 @@
+/* blocks/form-add/form-add.css */
+.form-add {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    margin-bottom: 20px;
+    display: none; /* Скрыт по умолчанию */
+}
+
+.form-add--visible {
+    display: block; /* Показывается при активации */
+}
+
+.form-add h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #334155;
+    font-weight: 600;
+}
+
+.form-add__fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Две колонки */
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-add__field {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-add__label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #64748b;
+    margin-bottom: 5px;
+}
+
+.form-add__input {
+    padding: 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-add__input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.form-add__required::after {
+    content: " *";
+    color: #ef4444;
+}
+
+.form-add__buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.form-add__btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.form-add__btn--submit {
+    background-color: #22c55e;
+    color: white;
+}
+
+.form-add__btn--submit:hover {
+    background-color: #16a34a;
+}
+
+.form-add__btn--cancel {
+    background-color: #f1f5f9;
+    color: #64748b;
+}
+
+.form-add__btn--cancel:hover {
+    background-color: #e2e8f0;
+}

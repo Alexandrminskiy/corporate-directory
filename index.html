@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Корпоративный Справочник</title>
+    <link rel="stylesheet" href="blocks/search-bar/search-bar.css">
+    <link rel="stylesheet" href="blocks/form-add/form-add.css">
+    <link rel="stylesheet" href="blocks/contact-card/contact-card.css">
+    <style>
+        body { font-family: 'Inter', 'Segoe UI', sans-serif; margin: 0; padding: 20px; background-color: #f1f5f9; color: #1e293b; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .contacts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; margin-top: 20px; }
+        .status { text-align: center; padding: 10px; margin: 10px 0; border-radius: 6px; font-weight: 500; display: none; }
+        .status--visible { display: block; }
+        .status--success { background-color: #dcfce7; color: #166534; }
+        .status--error { background-color: #fee2e2; color: #991b1b; }
+        .status--info { background-color: #dbeafe; color: #1e40af; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); z-index: 1000; }
+        .modal-overlay--active { display: flex; align-items: center; justify-content: center; }
+        .modal { background: white; border-radius: 12px; padding: 20px; width: 90%; max-width: 500px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📞 Корпоративный Справочник</h1>
+
+    <div class="search-bar">
+        <input type="text" id="searchInput" class="search-bar__input" placeholder="Поиск по ФИО, должности, телефону...">
+        <button id="showAddFormBtn" class="search-bar__add-btn">
+            <span class="icon-plus"></span> Добавить
+        </button>
+    </div>
+
+    <div id="statusMessage" class="status"></div>
+
+    <!-- Сетка контактов -->
+    <div id="contactsGrid" class="contacts-grid">
+        <!-- Карточки будут добавлены сюда -->
+    </div>
+</div>
+
+<!-- Модальное окно для формы (добавление/редактирование) -->
+<div id="formModal" class="modal-overlay">
+    <div class="modal">
+        <h3 id="modalTitle">Добавить новый контакт</h3>
+        <div class="form-add__fields">
+            <div class="form-add__field">
+                <label for="fioInput" class="form-add__label form-add__required">ФИО</label>
+                <input type="text" id="fioInput" class="form-add__input" placeholder="Иванов Иван Иванович">
+            </div>
+            <div class="form-add__field">
+                <label for="roleInput" class="form-add__label form-add__required">Должность</label>
+                <input type="text" id="roleInput" class="form-add__input" placeholder="Главный специалист">
+            </div>
+            <div class="form-add__field">
+                <label for="orgInput" class="form-add__label">Организация</label>
+                <input type="text" id="orgInput" class="form-add__input" placeholder="ООО Ромашка">
+            </div>
+            <div class="form-add__field">
+                <label for="locationInput" class="form-add__label form-add__required">Населённый пункт</label>
+                <input type="text" id="locationInput" class="form-add__input" placeholder="Москва">
+            </div>
+            <div class="form-add__field">
+                <label for="phoneInput" class="form-add__label">Телефон</label>
+                <input type="tel" id="phoneInput" class="form-add__input" placeholder="+7 (XXX) XXX-XX-XX">
+            </div>
+            <div class="form-add__field">
+                <label for="emailInput" class="form-add__label">Email</label>
+                <input type="email" id="emailInput" class="form-add__input" placeholder="name@example.com">
+            </div>
+        </div>
+        <div class="form-add__buttons">
+            <button id="closeModalBtn" class="form-add__btn form-add__btn--cancel">Отмена</button>
+            <button id="saveFormBtn" class="form-add__btn form-add__btn--submit">Сохранить</button>
+        </div>
+    </div>
+</div>
+
+<script src="js/utils.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>

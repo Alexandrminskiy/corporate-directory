@@ -1,0 +1,54 @@
+/* blocks/contact-card/contact-card.css */
+.contact-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    padding: 15px;
+    transition: transform 0.2s;
+}
+
+.contact-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.contact-card__wrapper { }
+
+.contact-card__name {
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+.contact-card__info {
+    margin: 5px 0;
+    font-size: 0.9em;
+    color: #555;
+}
+
+.contact-card__info a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.contact-card__info a:hover {
+    text-decoration: underline;
+}
+
+.contact-card__actions {
+    margin-top: 10px;
+    text-align: right;
+}
+
+.contact-card__delete-btn {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+
+.contact-card__delete-btn:hover {
+    background-color: #c82333;
+}
