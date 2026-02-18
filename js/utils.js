@@ -19,20 +19,15 @@ async function sendContact(apiUrl, action, data, recordId = null) {
   const payload = { action, data };
   if (recordId) payload.id = recordId;
 
-  try {
-    await fetch(apiUrl, {
-      method: 'POST',
-      mode: 'no-cors', // Обязательно для Google Apps Script
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    
-    // При no-cors ответ прочитать нельзя, ждём и считаем успешным
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { result: 'success' }; 
-    
-  } catch (error) {
-    console.error('Ошибка отправки:', error);
-    throw error;
-  }
+  // 🔑 Важно: no-cors обязателен для Google Apps Script
+  await fetch(apiUrl, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain' }, // 🔑 text/plain избегает preflight
+    body: JSON.stringify(payload),
+  });
+
+  // Ждём пока GAS обработает запрос
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  return { result: 'success' };
 }
