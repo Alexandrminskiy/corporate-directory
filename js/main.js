@@ -2,7 +2,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   // 🔴 ВСТАВЬТЕ СЮДА ВАШУ ССЫЛКУ НА GOOGLE APPS SCRIPT
   const API_URL = 'https://script.google.com/macros/s/AKfycbzpEJaFlyyaZnSBOZz6_pkA6ktaWRSAHlXqQXXbUwg7jlF_NmAcRaGn1PFj2U8KeFIC1A/exec';
-
+  
   const userId = generateUserId();
   console.log('User ID:', userId);
 
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const contactsGrid = document.getElementById('contactsGrid');
   const statusMessage = document.getElementById('statusMessage');
   const modalTitle = document.getElementById('modalTitle');
-
+  
   const fioInput = document.getElementById('fioInput');
   const roleInput = document.getElementById('roleInput');
   const orgInput = document.getElementById('orgInput');
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => statusMessage.classList.remove('status--visible'), 3000);
   }
 
-  // --- Безопасное преобразование в строку для поиска ---
+  // --- Безопасное преобразование в строку ---
   function safeString(value) {
     return value != null ? String(value).toLowerCase() : '';
   }
@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Рендеринг карточек ---
   function renderContacts(contactsToRender) {
     contactsGrid.innerHTML = '';
-
+    
     if (contactsToRender.length === 0) {
       contactsGrid.innerHTML = '<div class="contact-card"><p>Контактов не найдено 🔍</p></div>';
       return;
@@ -50,24 +50,23 @@ document.addEventListener('DOMContentLoaded', () => {
     contactsToRender.forEach(contact => {
       const card = document.createElement('div');
       card.className = 'contact-card';
-
+      
       const isOwner = contact['Добавлено пользователем'] === userId;
-
-      // Формируем должность/организацию
+      
       const roleOrg = [contact['Должность'], contact['Организация']]
         .filter(v => v && String(v).trim())
         .join(', ') || 'Не указано';
-
-      // Безопасная обработка телефона и email
+      
+      // 🔑 Защита от чисел: приводим к строке
       const phoneRaw = contact['Телефон'] != null ? String(contact['Телефон']).trim() : '';
       const emailRaw = contact['Email'] != null ? String(contact['Email']).trim() : '';
-
-      const phoneLink = phoneRaw
-        ? `<a href="tel:${phoneRaw.replace(/\D/g, '')}" class="contact-card__link">📞 ${phoneRaw}</a>`
+      
+      const phoneLink = phoneRaw 
+        ? `<a href="tel:${phoneRaw.replace(/\D/g,'')}" class="contact-card__link">📞 ${phoneRaw}</a>` 
         : 'Не указан';
-
-      const emailLink = emailRaw
-        ? `<a href="mailto:${emailRaw}" class="contact-card__link">✉️ ${emailRaw}</a>`
+      
+      const emailLink = emailRaw 
+        ? `<a href="mailto:${emailRaw}" class="contact-card__link">✉️ ${emailRaw}</a>` 
         : 'Не указан';
 
       card.innerHTML = `
@@ -90,20 +89,20 @@ document.addEventListener('DOMContentLoaded', () => {
         card.querySelector('.contact-card__edit-btn')?.addEventListener('click', () => openEditForm(contact));
         card.querySelector('.contact-card__delete-btn')?.addEventListener('click', () => handleDelete(contact['ID']));
       }
-
+      
       contactsGrid.appendChild(card);
     });
   }
 
-  // --- Поиск ---
+  // --- Поиск (с защитой от чисел) ---
   searchInput.addEventListener('input', () => {
     const query = searchInput.value.toLowerCase();
-    const filtered = allContacts.filter(c =>
+    const filtered = allContacts.filter(c => 
       safeString(c['ФИО']).includes(query) ||
       safeString(c['Должность']).includes(query) ||
       safeString(c['Организация']).includes(query) ||
       safeString(c['Населенный пункт']).includes(query) ||
-      safeString(c['Телефон']).includes(query) ||
+      safeString(c['Телефон']).includes(query) || // 🔑 Теперь безопасно
       safeString(c['Email']).includes(query)
     );
     renderContacts(filtered);
@@ -122,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
     modal.classList.remove('modal-overlay--active');
     currentEditingId = null;
   });
-
+  
   modal.addEventListener('click', (e) => {
     if (e.target === modal) closeModalBtn.click();
   });
@@ -159,10 +158,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     try {
       showStatus(currentEditingId ? '💾 Сохранение...' : '📤 Добавление...', 'info');
-
+      
       const action = currentEditingId ? 'update' : 'add';
+      // 🔑 Теперь result всегда определён (см. utils.js)
       await sendContact(API_URL, action, data, currentEditingId);
-
+      
       closeModalBtn.click();
       await loadAndRender();
       showStatus(currentEditingId ? '✅ Обновлено!' : '✅ Добавлено!', 'success');
@@ -170,20 +170,12 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(err);
       showStatus('❌ Ошибка сети', 'error');
     }
-    // В main.js, внутри saveFormBtn.addEventListener:
-    if (result.result === 'added' || result.result === 'updated' || result.result === 'success_pending_reload' || !result) {
-      closeModalBtn.click();
-      await loadAndRender();
-      showStatus(currentEditingId ? '✅ Обновлено!' : '✅ Добавлено!', 'success');
-    } else {
-      showStatus('❌ Ошибка сохранения', 'error');
-    }
   });
 
   // --- Удаление ---
   async function handleDelete(recordId) {
     if (!confirm('Удалить эту запись?')) return;
-
+    
     try {
       showStatus('🗑️ Удаление...', 'info');
       await sendContact(API_URL, 'delete', {}, recordId);
@@ -202,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderContacts(allContacts);
     } catch (err) {
       console.error('Ошибка загрузки:', err);
-      contactsGrid.innerHTML = '<div class="contact-card">❌ Ошибка загрузки. Проверьте API_URL и доступ к таблице.</div>';
+      contactsGrid.innerHTML = '<div class="contact-card">❌ Ошибка загрузки. Проверьте API_URL.</div>';
     }
   }
 
