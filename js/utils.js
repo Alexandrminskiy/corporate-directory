@@ -12,11 +12,21 @@ function generateUserId() {
 async function fetchContacts(apiUrl) {
     try {
         console.log('Загрузка контактов с:', apiUrl);
-        const response = await fetch(apiUrl);
+        
+        // Добавляем параметр для избежания кэширования
+        const url = apiUrl + '?t=' + Date.now();
+        
+        const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        
         const data = await response.json();
         console.log('Загружено контактов:', data.length);
-        console.log('Пример контакта:', data[0]);
+        
+        // Проверяем, не пришла ли ошибка
+        if (data.error) {
+            throw new Error(data.error);
+        }
+        
         return data;
     } catch (error) {
         console.error('Ошибка загрузки:', error);
@@ -37,7 +47,7 @@ async function sendContact(apiUrl, action, data, recordId = null) {
     console.log('Отправка данных на сервер:', JSON.stringify(payload, null, 2));
 
     try {
-        // Используем JSONP подход для обхода CORS
+        // Используем FormData для отправки
         const formData = new FormData();
         formData.append('data', JSON.stringify(payload));
         
@@ -53,8 +63,10 @@ async function sendContact(apiUrl, action, data, recordId = null) {
         const result = await response.json();
         console.log('Ответ сервера:', result);
         
-        // Даем время на обработку
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!result.success) {
+            throw new Error(result.error || 'Неизвестная ошибка сервера');
+        }
+        
         return result;
         
     } catch (error) {
