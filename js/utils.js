@@ -1,4 +1,4 @@
-// js/utils.js - УЛУЧШЕННАЯ ВЕРСИЯ
+// js/utils.js
 
 function generateUserId() {
     let userId = localStorage.getItem('contactBookUserId');
@@ -14,13 +14,8 @@ function fetchContacts(apiUrl) {
         const callbackName = 'cb_' + Date.now();
         const script = document.createElement('script');
         
-        // Добавляем timestamp чтобы избежать кэширования
-        const url = apiUrl + '?callback=' + callbackName + '&_=' + Date.now();
-        console.log('Загрузка с URL:', url);
+        script.src = apiUrl + '?callback=' + callbackName + '&_=' + Date.now();
         
-        script.src = url;
-        
-        // Таймаут на случай проблем с сетью
         const timeout = setTimeout(() => {
             cleanup();
             reject(new Error('Таймаут загрузки данных'));
@@ -35,20 +30,13 @@ function fetchContacts(apiUrl) {
         }
         
         window[callbackName] = function(data) {
-            console.log('Получены данные:', data);
             cleanup();
-            
-            if (data && data.error) {
-                reject(new Error(data.message || 'Ошибка сервера'));
-            } else {
-                resolve(data);
-            }
+            resolve(data);
         };
         
-        script.onerror = function(error) {
-            console.error('Ошибка загрузки скрипта:', error);
+        script.onerror = function() {
             cleanup();
-            reject(new Error('Не удалось загрузить данные. Проверьте подключение к интернету.'));
+            reject(new Error('Не удалось загрузить данные'));
         };
         
         document.body.appendChild(script);
@@ -63,11 +51,9 @@ function sendContact(apiUrl, action, data, recordId = null) {
         const payload = { action, data };
         if (recordId) payload.id = recordId;
         
-        const url = apiUrl + '?callback=' + callbackName + 
+        script.src = apiUrl + '?callback=' + callbackName + 
                     '&data=' + encodeURIComponent(JSON.stringify(payload)) +
                     '&_=' + Date.now();
-        
-        console.log('Отправка на URL:', url);
         
         const timeout = setTimeout(() => {
             cleanup();
@@ -83,20 +69,13 @@ function sendContact(apiUrl, action, data, recordId = null) {
         }
         
         window[callbackName] = function(response) {
-            console.log('Получен ответ:', response);
             cleanup();
-            
-            if (response && response.error) {
-                reject(new Error(response.message || 'Ошибка сервера'));
-            } else {
-                resolve(response || { success: true });
-            }
+            resolve(response || { success: true });
         };
         
-        script.onerror = function(error) {
-            console.error('Ошибка отправки:', error);
+        script.onerror = function() {
             cleanup();
-            reject(new Error('Не удалось отправить данные. Проверьте подключение к интернету.'));
+            reject(new Error('Не удалось отправить данные'));
         };
         
         document.body.appendChild(script);
