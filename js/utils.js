@@ -14,6 +14,7 @@ async function fetchContacts(apiUrl) {
     try {
         console.log('Загрузка контактов через прокси:', apiUrl);
         
+        // Используем fetch с mode: 'cors'
         const response = await fetch(apiUrl, {
             method: 'GET',
             mode: 'cors',
@@ -33,18 +34,48 @@ async function fetchContacts(apiUrl) {
     } catch (error) {
         console.error('Ошибка загрузки:', error);
         
-        // Показываем понятное сообщение об ошибке
-        let errorMessage = 'Ошибка загрузки данных: ';
-        if (error.message.includes('Failed to fetch')) {
-            errorMessage += 'Проверьте подключение к интернету';
-        } else if (error.message.includes('500')) {
-            errorMessage += 'Внутренняя ошибка сервера';
-        } else {
-            errorMessage += error.message;
+        // Пробуем альтернативный метод через JSONP
+        console.log('Пробуем JSONP метод...');
+        return fetchContactsJsonp(apiUrl);
+    }
+}
+
+// Запасной вариант через JSONP
+function fetchContactsJsonp(apiUrl) {
+    return new Promise((resolve, reject) => {
+        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+        const script = document.createElement('script');
+        
+        const separator = apiUrl.includes('?') ? '&' : '?';
+        const fullUrl = apiUrl + separator + 'callback=' + callbackName;
+        
+        const timeout = setTimeout(() => {
+            cleanup();
+            reject(new Error('Таймаут JSONP загрузки'));
+        }, 10000);
+        
+        function cleanup() {
+            clearTimeout(timeout);
+            delete window[callbackName];
+            if (script.parentNode) {
+                document.body.removeChild(script);
+            }
         }
         
-        throw new Error(errorMessage);
-    }
+        window[callbackName] = function(data) {
+            cleanup();
+            console.log('JSONP ответ получен:', data);
+            resolve(data);
+        };
+        
+        script.onerror = function() {
+            cleanup();
+            reject(new Error('Ошибка JSONP загрузки'));
+        };
+        
+        script.src = fullUrl;
+        document.body.appendChild(script);
+    });
 }
 
 // Функция для отправки данных через прокси
@@ -86,16 +117,60 @@ async function sendContact(apiUrl, action, data, recordId = null) {
     } catch (error) {
         console.error('Ошибка отправки:', error);
         
-        // Показываем понятное сообщение об ошибке
-        let errorMessage = 'Ошибка отправки данных: ';
-        if (error.message.includes('Failed to fetch')) {
-            errorMessage += 'Проверьте подключение к интернету';
-        } else if (error.message.includes('500')) {
-            errorMessage += 'Внутренняя ошибка сервера';
-        } else {
-            errorMessage += error.message;
+        // Пробуем отправить через JSONP
+        console.log('Пробуем JSONP отправку...');
+        return sendContactJsonp(apiUrl, action, data, recordId);
+    }
+}
+
+// Отправка через JSONP
+function sendContactJsonp(apiUrl, action, data, recordId = null) {
+    return new Promise((resolve, reject) => {
+        const payload = { 
+            action, 
+            data
+        };
+        
+        if (recordId) {
+            payload.id = recordId;
         }
         
-        throw new Error(errorMessage);
-    }
+        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+        const script = document.createElement('script');
+        
+        const separator = apiUrl.includes('?') ? '&' : '?';
+        const params = new URLSearchParams({
+            callback: callbackName,
+            data: JSON.stringify(payload)
+        });
+        
+        const fullUrl = apiUrl + separator + params.toString();
+        
+        const timeout = setTimeout(() => {
+            cleanup();
+            reject(new Error('Таймаут JSONP отправки'));
+        }, 10000);
+        
+        function cleanup() {
+            clearTimeout(timeout);
+            delete window[callbackName];
+            if (script.parentNode) {
+                document.body.removeChild(script);
+            }
+        }
+        
+        window[callbackName] = function(response) {
+            cleanup();
+            console.log('JSONP ответ:', response);
+            resolve(response || { success: true });
+        };
+        
+        script.onerror = function() {
+            cleanup();
+            reject(new Error('Ошибка JSONP отправки'));
+        };
+        
+        script.src = fullUrl;
+        document.body.appendChild(script);
+    });
 }
