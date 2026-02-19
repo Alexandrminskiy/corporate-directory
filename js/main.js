@@ -350,4 +350,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Старт приложения ---
   loadAndRender();
+
+
+
+  // Временная функция для отладки - добавьте в конец main.js
+window.checkOwnership = function() {
+    console.log('Текущий User ID:', userId);
+    console.log('Всего контактов:', allContacts.length);
+    allContacts.forEach((contact, index) => {
+        console.log(`Контакт ${index + 1}:`, {
+            id: contact['ID'],
+            name: contact['ФИО'],
+            owner: contact['Добавлено пользователем'],
+            isOwner: contact['Добавлено пользователем'] === userId
+        });
+    });
+}
 });
