@@ -9,7 +9,7 @@ function generateUserId() {
     return userId;
 }
 
-// Простая функция загрузки через прокси
+// Функция для загрузки контактов через прокси
 async function fetchContacts(apiUrl) {
     try {
         console.log('Загрузка контактов через прокси:', apiUrl);
@@ -27,16 +27,27 @@ async function fetchContacts(apiUrl) {
         }
         
         const data = await response.json();
-        console.log('Загружено контактов:', data.length);
+        console.log('Загружено контактов:', Array.isArray(data) ? data.length : 0);
         
         return data;
     } catch (error) {
         console.error('Ошибка загрузки:', error);
-        throw error;
+        
+        // Показываем понятное сообщение об ошибке
+        let errorMessage = 'Ошибка загрузки данных: ';
+        if (error.message.includes('Failed to fetch')) {
+            errorMessage += 'Проверьте подключение к интернету';
+        } else if (error.message.includes('500')) {
+            errorMessage += 'Внутренняя ошибка сервера';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        throw new Error(errorMessage);
     }
 }
 
-// Простая функция отправки через прокси
+// Функция для отправки данных через прокси
 async function sendContact(apiUrl, action, data, recordId = null) {
     const payload = { 
         action, 
@@ -66,10 +77,25 @@ async function sendContact(apiUrl, action, data, recordId = null) {
         const result = await response.json();
         console.log('Ответ сервера:', result);
         
+        if (result.error) {
+            throw new Error(result.message || 'Неизвестная ошибка сервера');
+        }
+        
         return result;
         
     } catch (error) {
         console.error('Ошибка отправки:', error);
-        throw error;
+        
+        // Показываем понятное сообщение об ошибке
+        let errorMessage = 'Ошибка отправки данных: ';
+        if (error.message.includes('Failed to fetch')) {
+            errorMessage += 'Проверьте подключение к интернету';
+        } else if (error.message.includes('500')) {
+            errorMessage += 'Внутренняя ошибка сервера';
+        } else {
+            errorMessage += error.message;
+        }
+        
+        throw new Error(errorMessage);
     }
 }
