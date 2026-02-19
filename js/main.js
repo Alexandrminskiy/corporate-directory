@@ -1,7 +1,7 @@
 // js/main.js
 document.addEventListener('DOMContentLoaded', () => {
     // 🔴 ВАЖНО: Вставьте сюда вашу актуальную ссылку на Google Apps Script
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzpEJaFlyyaZnSBOZz6_pkA6ktaWRSAHlXqQXXbUwg7jlF_NmAcRaGn1PFj2U8KeFIC1A/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzY2XoM13p0XCT5pa0Ixw-tUt2m9s3EPyshOFDlEAweNVXro_ZEvbZmuHfZz00fC09reg/exec';
     
     const userId = generateUserId();
     console.log('User ID:', userId);

@@ -9,101 +9,34 @@ function generateUserId() {
     return userId;
 }
 
-// Публичные CORS прокси (по очереди)
-const PROXIES = [
-    'https://api.allorigins.win/raw?url=',
-    'https://cors-anywhere.herokuapp.com/',
-    'https://crossorigin.me/',
-    'https://cors.io/?'
-];
-
-let currentProxyIndex = 0;
-
-// Функция для загрузки контактов через прокси
+// Простая функция загрузки через прокси
 async function fetchContacts(apiUrl) {
-    // Пробуем разные прокси по очереди
-    for (let i = 0; i < PROXIES.length; i++) {
-        const proxyIndex = (currentProxyIndex + i) % PROXIES.length;
-        const proxy = PROXIES[proxyIndex];
+    try {
+        console.log('Загрузка контактов через прокси:', apiUrl);
         
-        try {
-            console.log(`Попытка загрузки через прокси ${proxyIndex + 1}:`, proxy);
-            
-            // Кодируем URL для прокси
-            const encodedUrl = encodeURIComponent(apiUrl);
-            const proxyUrl = proxy + encodedUrl;
-            
-            const response = await fetch(proxyUrl, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+        const response = await fetch(apiUrl, {
+            method: 'GET',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
             }
-            
-            const data = await response.json();
-            console.log('Контакты загружены:', data);
-            
-            // Если успешно, запоминаем рабочий прокси
-            currentProxyIndex = proxyIndex;
-            return data;
-            
-        } catch (error) {
-            console.warn(`Прокси ${proxyIndex + 1} не работает:`, error.message);
-            // Продолжаем со следующим прокси
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const data = await response.json();
+        console.log('Загружено контактов:', data.length);
+        
+        return data;
+    } catch (error) {
+        console.error('Ошибка загрузки:', error);
+        throw error;
     }
-    
-    // Если все прокси не сработали, пробуем JSONP как запасной вариант
-    console.log('Прокси не работают, пробуем JSONP...');
-    return fetchContactsJsonp(apiUrl);
 }
 
-// Запасной вариант через JSONP
-function fetchContactsJsonp(apiUrl) {
-    return new Promise((resolve, reject) => {
-        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-        const script = document.createElement('script');
-        
-        const separator = apiUrl.includes('?') ? '&' : '?';
-        const fullUrl = apiUrl + separator + 'callback=' + callbackName;
-        
-        const timeout = setTimeout(() => {
-            cleanup();
-            reject(new Error('Таймаут JSONP загрузки'));
-        }, 10000);
-        
-        function cleanup() {
-            clearTimeout(timeout);
-            delete window[callbackName];
-            if (script.parentNode) {
-                document.body.removeChild(script);
-            }
-        }
-        
-        window[callbackName] = function(data) {
-            cleanup();
-            if (data && data.error) {
-                reject(new Error(data.error));
-            } else {
-                resolve(data || []);
-            }
-        };
-        
-        script.onerror = function() {
-            cleanup();
-            reject(new Error('Ошибка JSONP загрузки'));
-        };
-        
-        script.src = fullUrl;
-        document.body.appendChild(script);
-    });
-}
-
-// Функция для отправки данных через прокси
+// Простая функция отправки через прокси
 async function sendContact(apiUrl, action, data, recordId = null) {
     const payload = { 
         action, 
@@ -114,108 +47,29 @@ async function sendContact(apiUrl, action, data, recordId = null) {
         payload.id = recordId;
     }
 
-    console.log('Отправка данных:', payload);
-    
-    // Пробуем разные прокси для отправки
-    for (let i = 0; i < PROXIES.length; i++) {
-        const proxyIndex = (currentProxyIndex + i) % PROXIES.length;
-        const proxy = PROXIES[proxyIndex];
-        
-        try {
-            console.log(`Отправка через прокси ${proxyIndex + 1}:`, proxy);
-            
-            // Для POST запросов нужно использовать прокси по-другому
-            let response;
-            
-            if (proxy.includes('allorigins')) {
-                // allorigins.win поддерживает только GET, используем JSONP для POST
-                return sendContactJsonp(apiUrl, action, data, recordId);
-            } else {
-                // Другие прокси могут поддерживать POST
-                const proxyUrl = proxy + apiUrl;
-                
-                response = await fetch(proxyUrl, {
-                    method: 'POST',
-                    mode: 'cors',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify(payload)
-                });
-            }
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const result = await response.json();
-            console.log('Ответ сервера:', result);
-            
-            currentProxyIndex = proxyIndex;
-            return result;
-            
-        } catch (error) {
-            console.warn(`Прокси ${proxyIndex + 1} не работает для POST:`, error.message);
-        }
-    }
-    
-    // Если все прокси не сработали, используем JSONP
-    console.log('Прокси не работают для POST, пробуем JSONP...');
-    return sendContactJsonp(apiUrl, action, data, recordId);
-}
+    console.log('Отправка данных через прокси:', payload);
 
-// Отправка через JSONP
-function sendContactJsonp(apiUrl, action, data, recordId = null) {
-    return new Promise((resolve, reject) => {
-        const payload = { 
-            action, 
-            data
-        };
-        
-        if (recordId) {
-            payload.id = recordId;
-        }
-        
-        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-        const script = document.createElement('script');
-        
-        const separator = apiUrl.includes('?') ? '&' : '?';
-        const params = new URLSearchParams({
-            callback: callbackName,
-            data: JSON.stringify(payload)
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
         });
         
-        const fullUrl = apiUrl + separator + params.toString();
-        
-        const timeout = setTimeout(() => {
-            cleanup();
-            reject(new Error('Таймаут JSONP отправки'));
-        }, 10000);
-        
-        function cleanup() {
-            clearTimeout(timeout);
-            delete window[callbackName];
-            if (script.parentNode) {
-                document.body.removeChild(script);
-            }
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
         
-        window[callbackName] = function(response) {
-            cleanup();
-            if (response && response.error) {
-                reject(new Error(response.error));
-            } else {
-                resolve(response || { success: true });
-            }
-        };
+        const result = await response.json();
+        console.log('Ответ сервера:', result);
         
-        script.onerror = function() {
-            cleanup();
-            reject(new Error('Ошибка JSONP отправки'));
-        };
+        return result;
         
-        script.src = fullUrl;
-        document.body.appendChild(script);
-    });
+    } catch (error) {
+        console.error('Ошибка отправки:', error);
+        throw error;
+    }
 }
