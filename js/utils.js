@@ -11,10 +11,12 @@ function generateUserId() {
 
 async function fetchContacts(apiUrl) {
     try {
+        console.log('Загрузка контактов с:', apiUrl);
         const response = await fetch(apiUrl);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         console.log('Загружено контактов:', data.length);
+        console.log('Пример контакта:', data[0]);
         return data;
     } catch (error) {
         console.error('Ошибка загрузки:', error);
@@ -25,27 +27,35 @@ async function fetchContacts(apiUrl) {
 async function sendContact(apiUrl, action, data, recordId = null) {
     const payload = { 
         action, 
-        data,
-        id: recordId 
+        data
     };
     
-    if (recordId) payload.id = recordId;
+    if (recordId) {
+        payload.id = recordId;
+    }
 
-    console.log('Отправка данных:', payload);
+    console.log('Отправка данных на сервер:', JSON.stringify(payload, null, 2));
 
     try {
+        // Используем JSONP подход для обхода CORS
+        const formData = new FormData();
+        formData.append('data', JSON.stringify(payload));
+        
         const response = await fetch(apiUrl, {
             method: 'POST',
-            mode: 'no-cors',
-            headers: { 
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload),
+            body: formData
         });
 
-        // При no-cors ответ прочитать нельзя, ждём и считаем успешным
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return { result: 'success' };
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        console.log('Ответ сервера:', result);
+        
+        // Даем время на обработку
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return result;
         
     } catch (error) {
         console.error('Ошибка отправки:', error);

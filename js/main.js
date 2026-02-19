@@ -52,6 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Проверка прав доступа
             const isOwner = contact['Добавлено пользователем'] === userId;
+            console.log(`Контакт ${contact['ФИО']}: владелец? ${isOwner} (${contact['Добавлено пользователем']} vs ${userId})`);
             
             // Формирование строки "Должность, Организация"
             const roleOrg = [contact['Должность'], contact['Организация']]
@@ -92,14 +93,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (editBtn) {
                     editBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
                         e.stopPropagation();
+                        console.log('Нажата кнопка редактирования для ID:', contact['ID']);
                         openEditForm(contact);
                     });
                 }
                 
                 if (deleteBtn) {
                     deleteBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
                         e.stopPropagation();
+                        console.log('Нажата кнопка удаления для ID:', contact['ID']);
                         handleDelete(contact['ID']);
                     });
                 }
@@ -158,7 +163,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Модальное окно: Открыть для редактирования ---
     function openEditForm(contact) {
-        console.log('Редактирование контакта:', contact);
+        console.log('РЕДАКТИРОВАНИЕ: открытие формы для контакта:', contact);
+        console.log('ID контакта:', contact['ID']);
+        
         currentEditingId = contact['ID'];
         modalTitle.textContent = '✏️ Редактировать контакт';
         
@@ -169,11 +176,21 @@ document.addEventListener('DOMContentLoaded', () => {
         phoneInput.value = contact['Телефон'] || '';
         emailInput.value = contact['Email'] || '';
         
+        console.log('Заполнена форма:', {
+            fio: fioInput.value,
+            role: roleInput.value,
+            location: locationInput.value,
+            editingId: currentEditingId
+        });
+        
         modal.classList.add('modal-overlay--active');
     }
 
     // --- Сохранение (Добавление или Обновление) ---
     saveFormBtn.addEventListener('click', async () => {
+        console.log('Сохранение формы. Режим:', currentEditingId ? 'редактирование' : 'добавление');
+        console.log('Текущий editingId:', currentEditingId);
+        
         // Валидация
         if (!fioInput.value.trim()) {
             showStatus('⚠️ Укажите ФИО', 'error');
@@ -200,50 +217,67 @@ document.addEventListener('DOMContentLoaded', () => {
             location: locationInput.value.trim(),
             phone: phoneInput.value.trim(),
             email: emailInput.value.trim(),
-            userId
+            userId: userId
         };
 
+        console.log('Данные для отправки:', data);
+        console.log('ID для обновления:', currentEditingId);
+
         try {
-            showStatus(currentEditingId ? '💾 Сохранение...' : '📤 Добавление...', 'info');
+            const action = currentEditingId ? 'update' : 'add';
+            showStatus(action === 'update' ? '💾 Обновление...' : '📤 Добавление...', 'info');
             
-            await sendContact(API_URL, currentEditingId ? 'update' : 'add', data, currentEditingId);
+            const result = await sendContact(API_URL, action, data, currentEditingId);
+            console.log('Результат отправки:', result);
             
             closeModalBtn.click();
+            
+            // Даем время на обработку на сервере
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
             await loadAndRender();
             
             showStatus(
-                currentEditingId ? '✅ Контакт обновлён!' : '✅ Контакт добавлен!', 
+                action === 'update' ? '✅ Контакт обновлён!' : '✅ Контакт добавлен!', 
                 'success'
             );
         } catch (err) {
             console.error('Ошибка сохранения:', err);
-            showStatus('❌ Ошибка при сохранении', 'error');
+            showStatus('❌ Ошибка при сохранении: ' + err.message, 'error');
         }
     });
 
     // --- Удаление ---
     async function handleDelete(recordId) {
+        console.log('Удаление контакта с ID:', recordId);
+        
         if (!confirm('Вы уверены, что хотите удалить этот контакт?')) return;
         
         try {
             showStatus('🗑️ Удаление...', 'info');
-            await sendContact(API_URL, 'delete', {}, recordId);
+            const result = await sendContact(API_URL, 'delete', {}, recordId);
+            console.log('Результат удаления:', result);
+            
+            await new Promise(resolve => setTimeout(resolve, 2000));
             await loadAndRender();
+            
             showStatus('✅ Контакт удалён!', 'success');
         } catch (err) {
             console.error('Ошибка удаления:', err);
-            showStatus('❌ Ошибка при удалении', 'error');
+            showStatus('❌ Ошибка при удалении: ' + err.message, 'error');
         }
     }
 
     // --- Загрузка данных ---
     async function loadAndRender() {
         try {
+            console.log('Загрузка данных...');
             const data = await fetchContacts(API_URL);
+            
             if (Array.isArray(data)) {
                 allContacts = data;
+                console.log('Всего контактов загружено:', allContacts.length);
                 renderContacts(allContacts);
-                console.log('Загружено контактов:', allContacts.length);
             } else {
                 console.error('Неверный формат данных:', data);
                 contactsGrid.innerHTML = '<div class="contact-card">❌ Ошибка формата данных</div>';
