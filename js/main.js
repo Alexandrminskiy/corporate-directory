@@ -1,7 +1,7 @@
 // js/main.js
 document.addEventListener('DOMContentLoaded', () => {
   // 🔴 ВАЖНО: Вставьте сюда URL вашего ПРОКСИ скрипта
-  const API_URL = 'https://script.google.com/macros/s/AKfycbwuWxQvDyoPNIB4bPb3ViYhb0FM2MKGWJ5_brGlHrM3IFwZUpKZ47SWHhZ716lum6Z-oQ/exec';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwoPeymTidg8Z4daBL-9aPIdoz_TvjAXkXemkw7h5UDN_H7jpRjN5u-h3DHjZb9Hcz7wA/exec';
 
   // --- СНАЧАЛА объявляем ВСЕ переменные ---
   const userId = generateUserId();
@@ -354,16 +354,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   // Временная функция для отладки - добавьте в конец main.js
-window.checkOwnership = function() {
+  window.checkOwnership = function () {
     console.log('Текущий User ID:', userId);
     console.log('Всего контактов:', allContacts.length);
     allContacts.forEach((contact, index) => {
-        console.log(`Контакт ${index + 1}:`, {
-            id: contact['ID'],
-            name: contact['ФИО'],
-            owner: contact['Добавлено пользователем'],
-            isOwner: contact['Добавлено пользователем'] === userId
-        });
+      console.log(`Контакт ${index + 1}:`, {
+        id: contact['ID'],
+        name: contact['ФИО'],
+        owner: contact['Добавлено пользователем'],
+        isOwner: contact['Добавлено пользователем'] === userId
+      });
     });
-}
+  }
 });
