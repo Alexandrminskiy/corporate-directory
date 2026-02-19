@@ -9,7 +9,7 @@ function generateUserId() {
     return userId;
 }
 
-// Функция для загрузки контактов через JSONP
+// Функция для загрузки контактов через JSONP с увеличенным таймаутом
 async function fetchContacts(apiUrl) {
     return new Promise((resolve, reject) => {
         console.log('Загрузка контактов с:', apiUrl);
@@ -21,11 +21,14 @@ async function fetchContacts(apiUrl) {
         const separator = apiUrl.includes('?') ? '&' : '?';
         const fullUrl = apiUrl + separator + 'callback=' + callbackName;
         
-        // Таймаут на случай ошибки
+        console.log('Полный URL для JSONP:', fullUrl);
+        
+        // Увеличиваем таймаут до 30 секунд
         const timeout = setTimeout(() => {
+            console.error('Таймаут загрузки контактов');
             cleanup();
-            reject(new Error('Timeout loading contacts'));
-        }, 10000);
+            reject(new Error('Timeout loading contacts - сервер не отвечает'));
+        }, 30000);
         
         function cleanup() {
             clearTimeout(timeout);
@@ -36,20 +39,25 @@ async function fetchContacts(apiUrl) {
         }
         
         window[callbackName] = function(data) {
+            console.log('JSONP ответ получен:', data);
             cleanup();
-            console.log('Контакты загружены:', data);
             
             // Проверяем, не пришла ли ошибка
             if (data && data.error) {
                 reject(new Error(data.error));
+            } else if (data && Array.isArray(data)) {
+                resolve(data);
             } else {
+                // Если данные не в ожидаемом формате, пробуем преобразовать
+                console.warn('Неожиданный формат данных:', data);
                 resolve(data || []);
             }
         };
         
-        script.onerror = function() {
+        script.onerror = function(error) {
+            console.error('Ошибка загрузки скрипта:', error);
             cleanup();
-            reject(new Error('JSONP request failed'));
+            reject(new Error('JSONP request failed - проверьте URL и доступ к серверу'));
         };
         
         script.src = fullUrl;
@@ -57,7 +65,7 @@ async function fetchContacts(apiUrl) {
     });
 }
 
-// Функция для отправки данных через скрытую форму
+// Функция для отправки данных через JSONP
 function sendContact(apiUrl, action, data, recordId = null) {
     return new Promise((resolve, reject) => {
         const payload = { 
@@ -69,85 +77,57 @@ function sendContact(apiUrl, action, data, recordId = null) {
             payload.id = recordId;
         }
 
-        console.log('Отправка данных:', payload);
-
-        // Создаем уникальные имена для iframe и формы
-        const formId = 'form_' + Math.random().toString(36).substr(2, 9);
-        const iframeId = 'iframe_' + Math.random().toString(36).substr(2, 9);
+        console.log('Отправка данных через JSONP:', payload);
         
-        // Создаем iframe
-        const iframe = document.createElement('iframe');
-        iframe.name = iframeId;
-        iframe.id = iframeId;
-        iframe.style.display = 'none';
+        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+        const script = document.createElement('script');
         
-        // Создаем форму
-        const form = document.createElement('form');
-        form.id = formId;
-        form.method = 'POST';
-        form.action = apiUrl;
-        form.target = iframeId;
-        form.style.display = 'none';
-        form.enctype = 'multipart/form-data';
+        // Формируем URL с параметрами
+        const separator = apiUrl.includes('?') ? '&' : '?';
+        const params = new URLSearchParams({
+            callback: callbackName,
+            data: JSON.stringify(payload)
+        });
         
-        // Добавляем данные как скрытое поле
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'data';
-        input.value = JSON.stringify(payload);
-        form.appendChild(input);
+        const fullUrl = apiUrl + separator + params.toString();
+        console.log('Полный URL для отправки:', fullUrl);
         
-        // Таймаут
+        // Увеличиваем таймаут до 30 секунд
         const timeout = setTimeout(() => {
+            console.error('Таймаут отправки данных');
             cleanup();
-            reject(new Error('Timeout sending data'));
-        }, 15000);
+            reject(new Error('Timeout sending data - сервер не отвечает'));
+        }, 30000);
         
         function cleanup() {
             clearTimeout(timeout);
-            if (document.getElementById(formId)) {
-                document.body.removeChild(form);
-            }
-            if (document.getElementById(iframeId)) {
-                document.body.removeChild(iframe);
-            }
-            window.removeEventListener('message', messageHandler);
-        }
-        
-        // Обработчик сообщения от iframe
-        function messageHandler(event) {
-            // Проверяем origin (можно сделать более строгую проверку)
-            if (event.data && typeof event.data === 'object') {
-                console.log('Получен ответ:', event.data);
-                cleanup();
-                
-                if (event.data.success) {
-                    resolve(event.data);
-                } else {
-                    reject(new Error(event.data.error || 'Unknown error'));
-                }
+            delete window[callbackName];
+            if (script.parentNode) {
+                document.body.removeChild(script);
             }
         }
         
-        window.addEventListener('message', messageHandler);
-        
-        // Обработчик загрузки iframe (запасной вариант)
-        iframe.onload = function() {
-            console.log('Iframe загружен');
-            // Не резолвим здесь, ждем message
-        };
-        
-        iframe.onerror = function() {
+        window[callbackName] = function(response) {
+            console.log('JSONP ответ получен:', response);
             cleanup();
-            reject(new Error('Iframe loading failed'));
+            
+            if (response && response.error) {
+                reject(new Error(response.error));
+            } else if (response && response.success) {
+                resolve(response);
+            } else {
+                // Если нет явного успеха, но нет и ошибки
+                resolve(response || { success: true });
+            }
         };
         
-        // Добавляем на страницу
-        document.body.appendChild(iframe);
-        document.body.appendChild(form);
+        script.onerror = function(error) {
+            console.error('Ошибка загрузки скрипта:', error);
+            cleanup();
+            reject(new Error('JSONP request failed - проверьте URL и доступ к серверу'));
+        };
         
-        // Отправляем форму
-        console.log('Отправка формы...');
-        form.submit();
+        script.src = fullUrl;
+        document.body.appendChild(script);
     });
 }

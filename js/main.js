@@ -254,25 +254,49 @@ saveFormBtn.addEventListener('click', async () => {
     }
 });
 
-    // --- Загрузка данных ---
-    async function loadAndRender() {
-        try {
-            console.log('Загрузка данных...');
-            const data = await fetchContacts(API_URL);
+   // --- Загрузка данных с обработкой ошибок ---
+async function loadAndRender() {
+    try {
+        console.log('Загрузка данных...');
+        
+        // Показываем индикатор загрузки
+        contactsGrid.innerHTML = '<div class="contact-card"><p>⏳ Загрузка контактов...</p></div>';
+        
+        const data = await fetchContacts(API_URL);
+        console.log('Данные получены:', data);
+        
+        if (Array.isArray(data)) {
+            allContacts = data;
+            console.log('Всего контактов загружено:', allContacts.length);
             
-            if (Array.isArray(data)) {
-                allContacts = data;
-                console.log('Всего контактов загружено:', allContacts.length);
-                renderContacts(allContacts);
+            if (allContacts.length === 0) {
+                contactsGrid.innerHTML = '<div class="contact-card"><p>📭 Нет контактов. Нажмите "Добавить" для создания первого контакта.</p></div>';
             } else {
-                console.error('Неверный формат данных:', data);
-                contactsGrid.innerHTML = '<div class="contact-card">❌ Ошибка формата данных</div>';
+                renderContacts(allContacts);
             }
-        } catch (err) {
-            console.error('Ошибка загрузки:', err);
-            contactsGrid.innerHTML = '<div class="contact-card">❌ Ошибка загрузки. Проверьте API_URL и доступ к таблице.</div>';
+        } else {
+            console.error('Неверный формат данных:', data);
+            contactsGrid.innerHTML = '<div class="contact-card"><p>❌ Ошибка формата данных. Проверьте структуру таблицы.</p></div>';
         }
+    } catch (err) {
+        console.error('Ошибка загрузки:', err);
+        
+        // Показываем понятное сообщение об ошибке
+        let errorMessage = '❌ Ошибка загрузки. ';
+        
+        if (err.message.includes('Timeout')) {
+            errorMessage += 'Сервер не отвечает. Попробуйте обновить страницу или проверить подключение к интернету.';
+        } else if (err.message.includes('JSONP')) {
+            errorMessage += 'Проблема с доступом к серверу. Проверьте URL веб-приложения.';
+        } else {
+            errorMessage += err.message;
+        }
+        
+        contactsGrid.innerHTML = `<div class="contact-card"><p>${errorMessage}</p>
+            <button onclick="location.reload()" style="margin-top: 10px; padding: 5px 10px;">🔄 Обновить страницу</button>
+        </div>`;
     }
+}
 
     // --- Обработка клавиши Escape для закрытия модального окна ---
     document.addEventListener('keydown', (e) => {
