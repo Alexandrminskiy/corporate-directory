@@ -131,3 +131,27 @@ function sendContact(apiUrl, action, data, recordId = null) {
         document.body.appendChild(script);
     });
 }
+// Альтернативный метод загрузки через iframe если JSONP не работает
+async function fetchContactsViaIframe(apiUrl) {
+    return new Promise((resolve, reject) => {
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        
+        const timeout = setTimeout(() => {
+            document.body.removeChild(iframe);
+            reject(new Error('Iframe timeout'));
+        }, 10000);
+        
+        window.addEventListener('message', function onMessage(event) {
+            if (event.data && Array.isArray(event.data)) {
+                clearTimeout(timeout);
+                window.removeEventListener('message', onMessage);
+                document.body.removeChild(iframe);
+                resolve(event.data);
+            }
+        });
+        
+        iframe.src = apiUrl + '?mode=iframe';
+        document.body.appendChild(iframe);
+    });
+}
