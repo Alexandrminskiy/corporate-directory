@@ -1,7 +1,7 @@
 // js/main.js
 document.addEventListener('DOMContentLoaded', () => {
   // 🔴 ВАЖНО: Вставьте сюда URL вашего ПРОКСИ скрипта
-  const API_URL = 'https://script.google.com/macros/s/AKfycbzKQtr-P5jwWMJCi9j1KGoN-snAJqG1CBNCYAAtyX1B2dDouyLzuU1xiAHXJpIaSTQTTQ/exec';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbw8DMkpECn8ajYmFqQBRKSteCo4rOtKRPKB2-Osw14hahb44rBK7p0tHibMfCX2UIa4Tg/exec';
 
   const userId = generateUserId();
   console.log('User ID:', userId);
