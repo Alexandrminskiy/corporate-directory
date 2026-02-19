@@ -53,9 +53,11 @@ function sendContact(apiUrl, action, data, recordId = null) {
         const payload = { action, data };
         if (recordId) payload.id = recordId;
         
-        script.src = apiUrl + '?callback=' + callbackName + 
+        const url = apiUrl + '?callback=' + callbackName + 
                     '&data=' + encodeURIComponent(JSON.stringify(payload)) +
                     '&_=' + Date.now();
+        
+        console.log(`🔵 ОТПРАВКА ${action}:`, { id: recordId, data });
         
         const timeout = setTimeout(() => {
             cleanup();
@@ -71,17 +73,23 @@ function sendContact(apiUrl, action, data, recordId = null) {
         }
         
         window[callbackName] = function(response) {
+            console.log(`🟢 ОТВЕТ ${action}:`, response);
             cleanup();
-            console.log('sendContact получил ответ:', response);
-            resolve(response || { success: true });
+            
+            if (response && response.error) {
+                reject(new Error(response.error));
+            } else {
+                resolve(response || { success: true });
+            }
         };
         
         script.onerror = function(error) {
-            console.error('Ошибка отправки:', error);
+            console.error(`🔴 ОШИБКА ${action}:`, error);
             cleanup();
-            reject(new Error('Не удалось отправить данные. Проверьте подключение к интернету.'));
+            reject(new Error('Не удалось отправить данные'));
         };
         
+        script.src = url;
         document.body.appendChild(script);
     });
 }
