@@ -1,10 +1,12 @@
 // js/main.js
 document.addEventListener('DOMContentLoaded', () => {
   // 🔴 ВАЖНО: Вставьте сюда URL вашего ПРОКСИ скрипта
-  const API_URL = 'https://script.google.com/macros/s/AKfycbzBtaRZdDDnVmfcxiOlRAa56hI1PiWaW5Eb7CIQUgCwDPunAXdn6cOE78crsYI1_OVP/exec';
+  const API_URL = 'https://script.google.com/macros/s/AKfycbx764iQmXfQCht4ONYZFddJqpancorFV-Bqq9sjtHgSwjA03oZbvrJv-P1ZWSXfdsqrzA/exec';
 
+  // В начале main.js после API_URL
   const userId = generateUserId();
   console.log('User ID:', userId);
+  console.log('Все контакты:', allContacts);
 
   // --- DOM Элементы ---
   const searchInput = document.getElementById('searchInput');
@@ -57,46 +59,66 @@ document.addEventListener('DOMContentLoaded', () => {
       // Проверка прав доступа
       const isOwner = contact['Добавлено пользователем'] === userId;
 
-      // Формирование строки "Должность, Организация"
-      const roleOrg = [contact['Должность'], contact['Организация']]
-        .filter(v => v && String(v).trim())
-        .join(', ') || 'Должность не указана';
+      // Форматируем ФИО
+      const fullName = contact['ФИО'] && contact['ФИО'].trim() ? contact['ФИО'] : 'Имя не указано';
 
-      // Безопасная обработка телефона и email
-      const phoneRaw = contact['Телефон'] != null ? String(contact['Телефон']).trim() : '';
+      // Форматируем должность
+      const role = contact['Должность'] && contact['Должность'].trim() ? contact['Должность'] : 'Должность не указана';
+
+      // Форматируем организацию
+      const org = contact['Организация'] && contact['Организация'].trim() ? contact['Организация'] : '';
+
+      // Форматируем должность + организация
+      const roleOrg = org ? `${role}, ${org}` : role;
+
+      // Форматируем телефон
+      let phoneRaw = contact['Телефон'] != null ? String(contact['Телефон']).trim() : '';
+      let phoneLink = '📞 Не указан';
+
+      if (phoneRaw) {
+        // Очищаем телефон от всего кроме цифр для ссылки
+        const phoneDigits = phoneRaw.replace(/\D/g, '');
+        if (phoneDigits) {
+          phoneLink = `<a href="tel:${phoneDigits}" class="contact-card__link">📞 ${phoneRaw}</a>`;
+        } else {
+          phoneLink = `📞 ${phoneRaw}`;
+        }
+      }
+
+      // Форматируем email
       const emailRaw = contact['Email'] != null ? String(contact['Email']).trim() : '';
-
-      const phoneLink = phoneRaw
-        ? `<a href="tel:${phoneRaw.replace(/\D/g, '')}" class="contact-card__link">📞 ${phoneRaw}</a>`
-        : '📞 Не указан';
-
       const emailLink = emailRaw
         ? `<a href="mailto:${emailRaw}" class="contact-card__link">✉️ ${emailRaw}</a>`
         : '✉️ Не указан';
 
+      // Форматируем населенный пункт
+      const location = contact['Населенный пункт'] && contact['Населенный пункт'].trim()
+        ? contact['Населенный пункт']
+        : 'Не указан';
+
       card.innerHTML = `
-                <div class="contact-card__wrapper">
-                    <h4 class="contact-card__name">${contact['ФИО'] || 'Имя не указано'}</h4>
-                    <p class="contact-card__info contact-card__info--role-org">
-                        <strong>💼</strong> ${roleOrg}
-                    </p>
-                    <p class="contact-card__info">
-                        <strong>📍</strong> ${contact['Населенный пункт'] || 'Не указан'}
-                    </p>
-                    <p class="contact-card__info">${phoneLink}</p>
-                    <p class="contact-card__info">${emailLink}</p>
-                    <div class="contact-card__actions">
-                        ${isOwner ? `
-                            <button class="contact-card__edit-btn" data-id="${contact['ID']}">
-                                ✏️ Редактировать
-                            </button>
-                            <button class="contact-card__delete-btn" data-id="${contact['ID']}">
-                                🗑️ Удалить
-                            </button>
-                        ` : ''}
-                    </div>
+            <div class="contact-card__wrapper">
+                <h4 class="contact-card__name">${fullName}</h4>
+                <p class="contact-card__info contact-card__info--role-org">
+                    <strong>💼</strong> ${roleOrg}
+                </p>
+                <p class="contact-card__info">
+                    <strong>📍</strong> ${location}
+                </p>
+                <p class="contact-card__info">${phoneLink}</p>
+                <p class="contact-card__info">${emailLink}</p>
+                <div class="contact-card__actions">
+                    ${isOwner ? `
+                        <button class="contact-card__edit-btn" data-id="${contact['ID']}">
+                            ✏️ Редактировать
+                        </button>
+                        <button class="contact-card__delete-btn" data-id="${contact['ID']}">
+                            🗑️ Удалить
+                        </button>
+                    ` : ''}
                 </div>
-            `;
+            </div>
+        `;
 
       // Навешиваем обработчики событий
       if (isOwner) {
