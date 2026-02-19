@@ -297,4 +297,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Старт приложения ---
     loadAndRender();
+
+
+    // Обработка сообщений от iframe
+window.addEventListener('message', function(event) {
+    console.log('Получено сообщение от iframe:', event.data);
+    if (event.data && event.data.success !== undefined) {
+        if (event.data.success) {
+            showStatus('✅ Операция выполнена успешно', 'success');
+        } else {
+            showStatus('❌ ' + (event.data.error || 'Ошибка операции'), 'error');
+        }
+        // Перезагружаем данные
+        setTimeout(() => {
+            loadAndRender();
+        }, 1500);
+    }
+});
 });
