@@ -1,12 +1,11 @@
 // js/main.js
 document.addEventListener('DOMContentLoaded', () => {
   // 🔴 ВАЖНО: Вставьте сюда URL вашего ПРОКСИ скрипта
-  const API_URL = 'https://script.google.com/macros/s/AKfycbx764iQmXfQCht4ONYZFddJqpancorFV-Bqq9sjtHgSwjA03oZbvrJv-P1ZWSXfdsqrzA/exec';
+  const API_URL = 'https://script.google.com/macros/s/ВАШ_URL_ПРОКСИ/exec';
 
-  // В начале main.js после API_URL
+  // --- Сначала объявляем ВСЕ переменные ---
   const userId = generateUserId();
   console.log('User ID:', userId);
-  console.log('Все контакты:', allContacts);
 
   // --- DOM Элементы ---
   const searchInput = document.getElementById('searchInput');
@@ -25,7 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const phoneInput = document.getElementById('phoneInput');
   const emailInput = document.getElementById('emailInput');
 
-  let allContacts = [];
+  // --- Переменные состояния ---
+  let allContacts = [];  // Объявляем ДО использования
   let currentEditingId = null;
 
   // --- Утилиты интерфейса ---
@@ -33,7 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     statusMessage.textContent = message;
     statusMessage.className = `status status--${type} status--visible`;
 
-    // Автоматически скрываем через 3 секунды
     setTimeout(() => {
       statusMessage.classList.remove('status--visible');
     }, 3000);
@@ -76,7 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
       let phoneLink = '📞 Не указан';
 
       if (phoneRaw) {
-        // Очищаем телефон от всего кроме цифр для ссылки
         const phoneDigits = phoneRaw.replace(/\D/g, '');
         if (phoneDigits) {
           phoneLink = `<a href="tel:${phoneDigits}" class="contact-card__link">📞 ${phoneRaw}</a>`;
@@ -97,28 +95,28 @@ document.addEventListener('DOMContentLoaded', () => {
         : 'Не указан';
 
       card.innerHTML = `
-            <div class="contact-card__wrapper">
-                <h4 class="contact-card__name">${fullName}</h4>
-                <p class="contact-card__info contact-card__info--role-org">
-                    <strong>💼</strong> ${roleOrg}
-                </p>
-                <p class="contact-card__info">
-                    <strong>📍</strong> ${location}
-                </p>
-                <p class="contact-card__info">${phoneLink}</p>
-                <p class="contact-card__info">${emailLink}</p>
-                <div class="contact-card__actions">
-                    ${isOwner ? `
-                        <button class="contact-card__edit-btn" data-id="${contact['ID']}">
-                            ✏️ Редактировать
-                        </button>
-                        <button class="contact-card__delete-btn" data-id="${contact['ID']}">
-                            🗑️ Удалить
-                        </button>
-                    ` : ''}
+                <div class="contact-card__wrapper">
+                    <h4 class="contact-card__name">${fullName}</h4>
+                    <p class="contact-card__info contact-card__info--role-org">
+                        <strong>💼</strong> ${roleOrg}
+                    </p>
+                    <p class="contact-card__info">
+                        <strong>📍</strong> ${location}
+                    </p>
+                    <p class="contact-card__info">${phoneLink}</p>
+                    <p class="contact-card__info">${emailLink}</p>
+                    <div class="contact-card__actions">
+                        ${isOwner ? `
+                            <button class="contact-card__edit-btn" data-id="${contact['ID']}">
+                                ✏️ Редактировать
+                            </button>
+                            <button class="contact-card__delete-btn" data-id="${contact['ID']}">
+                                🗑️ Удалить
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
 
       // Навешиваем обработчики событий
       if (isOwner) {
@@ -178,7 +176,6 @@ document.addEventListener('DOMContentLoaded', () => {
     clearForm();
     modal.classList.add('modal-overlay--active');
 
-    // Фокус на первое поле
     setTimeout(() => fioInput.focus(), 100);
   });
 
@@ -189,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
     clearForm();
   });
 
-  // Закрытие по клику на оверлей
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       closeModalBtn.click();
@@ -215,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- Сохранение (Добавление или Обновление) ---
   saveFormBtn.addEventListener('click', async () => {
-    // Валидация
     if (!fioInput.value.trim()) {
       showStatus('⚠️ Укажите ФИО', 'error');
       fioInput.focus();
@@ -244,7 +239,6 @@ document.addEventListener('DOMContentLoaded', () => {
       userId: userId
     };
 
-    // Блокируем кнопку
     saveFormBtn.disabled = true;
     const originalText = saveFormBtn.textContent;
     saveFormBtn.textContent = '⏳ Сохранение...';
@@ -255,23 +249,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
       await sendContact(API_URL, action, data, currentEditingId);
 
-      // Закрываем модальное окно
       closeModalBtn.click();
 
-      // Показываем успех
       showStatus(
         action === 'update' ? '✅ Контакт обновлён!' : '✅ Контакт добавлен!',
         'success'
       );
 
-      // Перезагружаем список
       await loadAndRender();
 
     } catch (err) {
       console.error('Ошибка сохранения:', err);
       showStatus('❌ ' + err.message, 'error');
     } finally {
-      // Разблокируем кнопку
       saveFormBtn.disabled = false;
       saveFormBtn.textContent = originalText;
     }
@@ -281,16 +271,11 @@ document.addEventListener('DOMContentLoaded', () => {
   async function handleDelete(recordId) {
     if (!confirm('Вы уверены, что хотите удалить этот контакт?')) return;
 
-    // Блокируем кнопки удаления (визуально)
-    const deleteButtons = document.querySelectorAll('.contact-card__delete-btn');
-    deleteButtons.forEach(btn => btn.disabled = true);
-
     try {
       showStatus('🗑️ Удаление...', 'info');
 
       await sendContact(API_URL, 'delete', {}, recordId);
 
-      // Перезагружаем список
       await loadAndRender();
 
       showStatus('✅ Контакт удалён!', 'success');
@@ -298,9 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.error('Ошибка удаления:', err);
       showStatus('❌ ' + err.message, 'error');
-    } finally {
-      // Разблокируем кнопки
-      deleteButtons.forEach(btn => btn.disabled = false);
     }
   }
 
@@ -309,14 +291,13 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       console.log('Загрузка данных...');
 
-      // Показываем индикатор загрузки
       contactsGrid.innerHTML = '<div class="contact-card"><p>⏳ Загрузка контактов...</p></div>';
 
       const data = await fetchContacts(API_URL);
       console.log('Данные получены:', data);
 
       if (Array.isArray(data)) {
-        allContacts = data;
+        allContacts = data;  // Здесь allContacts уже объявлена
         console.log('Всего контактов загружено:', allContacts.length);
 
         if (allContacts.length === 0) {
@@ -349,7 +330,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // --- Обработка клавиши Escape для закрытия модального окна ---
+  // --- Обработка клавиши Escape ---
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modal.classList.contains('modal-overlay--active')) {
       closeModalBtn.click();
@@ -368,5 +349,5 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // --- Старт приложения ---
-  loadAndRender();
+  loadAndRender();  // Запускаем загрузку данных
 });
