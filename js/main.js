@@ -187,86 +187,72 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Сохранение (Добавление или Обновление) ---
-    saveFormBtn.addEventListener('click', async () => {
-        console.log('Сохранение формы. Режим:', currentEditingId ? 'редактирование' : 'добавление');
-        console.log('Текущий editingId:', currentEditingId);
-        
-        // Валидация
-        if (!fioInput.value.trim()) {
-            showStatus('⚠️ Укажите ФИО', 'error');
-            fioInput.focus();
-            return;
-        }
-        
-        if (!roleInput.value.trim()) {
-            showStatus('⚠️ Укажите должность', 'error');
-            roleInput.focus();
-            return;
-        }
-        
-        if (!locationInput.value.trim()) {
-            showStatus('⚠️ Укажите населённый пункт', 'error');
-            locationInput.focus();
-            return;
-        }
-
-        const data = {
-            fio: fioInput.value.trim(),
-            role: roleInput.value.trim(),
-            org: orgInput.value.trim(),
-            location: locationInput.value.trim(),
-            phone: phoneInput.value.trim(),
-            email: emailInput.value.trim(),
-            userId: userId
-        };
-
-        console.log('Данные для отправки:', data);
-        console.log('ID для обновления:', currentEditingId);
-
-        try {
-            const action = currentEditingId ? 'update' : 'add';
-            showStatus(action === 'update' ? '💾 Обновление...' : '📤 Добавление...', 'info');
-            
-            const result = await sendContact(API_URL, action, data, currentEditingId);
-            console.log('Результат отправки:', result);
-            
-            closeModalBtn.click();
-            
-            // Даем время на обработку на сервере
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            await loadAndRender();
-            
-            showStatus(
-                action === 'update' ? '✅ Контакт обновлён!' : '✅ Контакт добавлен!', 
-                'success'
-            );
-        } catch (err) {
-            console.error('Ошибка сохранения:', err);
-            showStatus('❌ Ошибка при сохранении: ' + err.message, 'error');
-        }
-    });
-
-    // --- Удаление ---
-    async function handleDelete(recordId) {
-        console.log('Удаление контакта с ID:', recordId);
-        
-        if (!confirm('Вы уверены, что хотите удалить этот контакт?')) return;
-        
-        try {
-            showStatus('🗑️ Удаление...', 'info');
-            const result = await sendContact(API_URL, 'delete', {}, recordId);
-            console.log('Результат удаления:', result);
-            
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            await loadAndRender();
-            
-            showStatus('✅ Контакт удалён!', 'success');
-        } catch (err) {
-            console.error('Ошибка удаления:', err);
-            showStatus('❌ Ошибка при удалении: ' + err.message, 'error');
-        }
+saveFormBtn.addEventListener('click', async () => {
+    console.log('Сохранение формы. Режим:', currentEditingId ? 'редактирование' : 'добавление');
+    
+    // Валидация
+    if (!fioInput.value.trim()) {
+        showStatus('⚠️ Укажите ФИО', 'error');
+        fioInput.focus();
+        return;
     }
+    
+    if (!roleInput.value.trim()) {
+        showStatus('⚠️ Укажите должность', 'error');
+        roleInput.focus();
+        return;
+    }
+    
+    if (!locationInput.value.trim()) {
+        showStatus('⚠️ Укажите населённый пункт', 'error');
+        locationInput.focus();
+        return;
+    }
+
+    const data = {
+        fio: fioInput.value.trim(),
+        role: roleInput.value.trim(),
+        org: orgInput.value.trim(),
+        location: locationInput.value.trim(),
+        phone: phoneInput.value.trim(),
+        email: emailInput.value.trim(),
+        userId: userId
+    };
+
+    // Блокируем кнопку на время отправки
+    saveFormBtn.disabled = true;
+    const originalText = saveFormBtn.textContent;
+    saveFormBtn.textContent = 'Отправка...';
+
+    try {
+        const action = currentEditingId ? 'update' : 'add';
+        showStatus(action === 'update' ? '💾 Обновление...' : '📤 Добавление...', 'info');
+        
+        await sendContact(API_URL, action, data, currentEditingId);
+        
+        // Закрываем модальное окно
+        closeModalBtn.click();
+        
+        // Показываем успех
+        showStatus(
+            action === 'update' ? '✅ Контакт обновлён!' : '✅ Контакт добавлен!', 
+            'success'
+        );
+        
+        // Перезагружаем список
+        setTimeout(() => {
+            loadAndRender();
+        }, 2000);
+        
+    } catch (err) {
+        console.error('Ошибка сохранения:', err);
+        showStatus('❌ Ошибка при сохранении: ' + err.message, 'error');
+    } finally {
+        // Разблокируем кнопку
+        saveFormBtn.disabled = false;
+        saveFormBtn.textContent = originalText;
+    }
+});
 
     // --- Загрузка данных ---
     async function loadAndRender() {
