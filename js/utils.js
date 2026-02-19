@@ -31,12 +31,14 @@ function fetchContacts(apiUrl) {
         
         window[callbackName] = function(data) {
             cleanup();
+            console.log('fetchContacts получил данные:', data);
             resolve(data);
         };
         
-        script.onerror = function() {
+        script.onerror = function(error) {
+            console.error('Ошибка загрузки скрипта:', error);
             cleanup();
-            reject(new Error('Не удалось загрузить данные'));
+            reject(new Error('Не удалось загрузить данные. Проверьте подключение к интернету.'));
         };
         
         document.body.appendChild(script);
@@ -70,12 +72,14 @@ function sendContact(apiUrl, action, data, recordId = null) {
         
         window[callbackName] = function(response) {
             cleanup();
+            console.log('sendContact получил ответ:', response);
             resolve(response || { success: true });
         };
         
-        script.onerror = function() {
+        script.onerror = function(error) {
+            console.error('Ошибка отправки:', error);
             cleanup();
-            reject(new Error('Не удалось отправить данные'));
+            reject(new Error('Не удалось отправить данные. Проверьте подключение к интернету.'));
         };
         
         document.body.appendChild(script);
