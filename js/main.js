@@ -42,107 +42,126 @@ document.addEventListener('DOMContentLoaded', () => {
     [fioInput, roleInput, orgInput, locationInput, phoneInput, emailInput].forEach(i => i.value = '');
   }
 
-  // --- Рендеринг карточек ---
   function renderContacts(contactsToRender) {
     contactsGrid.innerHTML = '';
 
     if (contactsToRender.length === 0) {
-      contactsGrid.innerHTML = '<div class="contact-card"><p>🔍 Контактов не найдено</p></div>';
-      return;
+        contactsGrid.innerHTML = '<div class="contact-card"><p>🔍 Контактов не найдено</p></div>';
+        return;
     }
 
     contactsToRender.forEach(contact => {
-      const card = document.createElement('div');
-      card.className = 'contact-card';
+        const card = document.createElement('div');
+        card.className = 'contact-card';
 
-      // Проверка прав доступа
-      const isOwner = contact['Добавлено пользователем'] === userId;
+        // Проверка прав доступа
+        const isOwner = contact['Добавлено пользователем'] === userId;
 
-      // Форматируем ФИО
-      const fullName = contact['ФИО'] && contact['ФИО'].trim() ? contact['ФИО'] : 'Имя не указано';
-
-      // Форматируем должность
-      const role = contact['Должность'] && contact['Должность'].trim() ? contact['Должность'] : 'Должность не указана';
-
-      // Форматируем организацию
-      const org = contact['Организация'] && contact['Организация'].trim() ? contact['Организация'] : '';
-
-      // Форматируем должность + организация
-      const roleOrg = org ? `${role}, ${org}` : role;
-
-      // Форматируем телефон
-      let phoneRaw = contact['Телефон'] != null ? String(contact['Телефон']).trim() : '';
-      let phoneLink = '📞 Не указан';
-
-      if (phoneRaw) {
-        const phoneDigits = phoneRaw.replace(/\D/g, '');
-        if (phoneDigits) {
-          phoneLink = `<a href="tel:${phoneDigits}" class="contact-card__link">📞 ${phoneRaw}</a>`;
-        } else {
-          phoneLink = `📞 ${phoneRaw}`;
+        // БЕЗОПАСНОЕ форматирование ФИО
+        let fullName = 'Имя не указано';
+        if (contact['ФИО'] !== null && contact['ФИО'] !== undefined) {
+            const fioStr = String(contact['ФИО']).trim();
+            if (fioStr) fullName = fioStr;
         }
-      }
 
-      // Форматируем email
-      const emailRaw = contact['Email'] != null ? String(contact['Email']).trim() : '';
-      const emailLink = emailRaw
-        ? `<a href="mailto:${emailRaw}" class="contact-card__link">✉️ ${emailRaw}</a>`
-        : '✉️ Не указан';
+        // БЕЗОПАСНОЕ форматирование должности
+        let role = 'Должность не указана';
+        if (contact['Должность'] !== null && contact['Должность'] !== undefined) {
+            const roleStr = String(contact['Должность']).trim();
+            if (roleStr) role = roleStr;
+        }
 
-      // Форматируем населенный пункт
-      const location = contact['Населенный пункт'] && contact['Населенный пункт'].trim()
-        ? contact['Населенный пункт']
-        : 'Не указан';
+        // БЕЗОПАСНОЕ форматирование организации
+        let org = '';
+        if (contact['Организация'] !== null && contact['Организация'] !== undefined) {
+            org = String(contact['Организация']).trim();
+        }
 
-      card.innerHTML = `
-                <div class="contact-card__wrapper">
-                    <h4 class="contact-card__name">${fullName}</h4>
-                    <p class="contact-card__info contact-card__info--role-org">
-                        <strong>💼</strong> ${roleOrg}
-                    </p>
-                    <p class="contact-card__info">
-                        <strong>📍</strong> ${location}
-                    </p>
-                    <p class="contact-card__info">${phoneLink}</p>
-                    <p class="contact-card__info">${emailLink}</p>
-                    <div class="contact-card__actions">
-                        ${isOwner ? `
-                            <button class="contact-card__edit-btn" data-id="${contact['ID']}">
-                                ✏️ Редактировать
-                            </button>
-                            <button class="contact-card__delete-btn" data-id="${contact['ID']}">
-                                🗑️ Удалить
-                            </button>
-                        ` : ''}
-                    </div>
+        // Форматируем должность + организация
+        const roleOrg = org ? `${role}, ${org}` : role;
+
+        // БЕЗОПАСНОЕ форматирование телефона
+        let phoneRaw = '';
+        if (contact['Телефон'] !== null && contact['Телефон'] !== undefined) {
+            phoneRaw = String(contact['Телефон']).trim();
+        }
+        
+        let phoneLink = '📞 Не указан';
+        if (phoneRaw) {
+            const phoneDigits = phoneRaw.replace(/\D/g, '');
+            if (phoneDigits) {
+                phoneLink = `<a href="tel:${phoneDigits}" class="contact-card__link">📞 ${phoneRaw}</a>`;
+            } else {
+                phoneLink = `📞 ${phoneRaw}`;
+            }
+        }
+
+        // БЕЗОПАСНОЕ форматирование email
+        let emailRaw = '';
+        if (contact['Email'] !== null && contact['Email'] !== undefined) {
+            emailRaw = String(contact['Email']).trim();
+        }
+        
+        const emailLink = emailRaw
+            ? `<a href="mailto:${emailRaw}" class="contact-card__link">✉️ ${emailRaw}</a>`
+            : '✉️ Не указан';
+
+        // БЕЗОПАСНОЕ форматирование населенного пункта
+        let location = 'Не указан';
+        if (contact['Населенный пункт'] !== null && contact['Населенный пункт'] !== undefined) {
+            const locStr = String(contact['Населенный пункт']).trim();
+            if (locStr) location = locStr;
+        }
+
+        card.innerHTML = `
+            <div class="contact-card__wrapper">
+                <h4 class="contact-card__name">${fullName}</h4>
+                <p class="contact-card__info contact-card__info--role-org">
+                    <strong>💼</strong> ${roleOrg}
+                </p>
+                <p class="contact-card__info">
+                    <strong>📍</strong> ${location}
+                </p>
+                <p class="contact-card__info">${phoneLink}</p>
+                <p class="contact-card__info">${emailLink}</p>
+                <div class="contact-card__actions">
+                    ${isOwner ? `
+                        <button class="contact-card__edit-btn" data-id="${contact['ID']}">
+                            ✏️ Редактировать
+                        </button>
+                        <button class="contact-card__delete-btn" data-id="${contact['ID']}">
+                            🗑️ Удалить
+                        </button>
+                    ` : ''}
                 </div>
-            `;
+            </div>
+        `;
 
-      // Навешиваем обработчики событий
-      if (isOwner) {
-        const editBtn = card.querySelector('.contact-card__edit-btn');
-        const deleteBtn = card.querySelector('.contact-card__delete-btn');
+        // Навешиваем обработчики событий
+        if (isOwner) {
+            const editBtn = card.querySelector('.contact-card__edit-btn');
+            const deleteBtn = card.querySelector('.contact-card__delete-btn');
 
-        if (editBtn) {
-          editBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            openEditForm(contact);
-          });
+            if (editBtn) {
+                editBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openEditForm(contact);
+                });
+            }
+
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleDelete(contact['ID']);
+                });
+            }
         }
 
-        if (deleteBtn) {
-          deleteBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            handleDelete(contact['ID']);
-          });
-        }
-      }
-
-      contactsGrid.appendChild(card);
+        contactsGrid.appendChild(card);
     });
-  }
+}
 
   // --- Поиск ---
   searchInput.addEventListener('input', () => {
